@@ -1,5 +1,5 @@
 
-from flask import *
+from flask import *, render_template
 from whitenoise import WhiteNoise
 
 
@@ -12,7 +12,7 @@ app.wsgi_app = WhiteNoise(app.wsgi_app, root='static/', prefix='static/',
 
 @app.route('/', methods=['GET'])
 def home():
-    return Flask.render_template("index.htm")
+    return render_template("index.html")
 
 
 if __name__ == "__main__":
