@@ -1,18 +1,16 @@
 
-from flask import *, render_template
+from flask import *
 from whitenoise import WhiteNoise
 
 
 app=Flask(__name__)
-app.wsgi_app = WhiteNoise(app.wsgi_app, root='static/', prefix='static/',
-    index_file="index.htm",
+app.wsgi_app = WhiteNoise(app.wsgi_app, root='static/', prefix='',
+    index_file="index.html",
     autorefresh = True)
 
 
 
 @app.route('/', methods=['GET'])
-def home():
-    return render_template("index.html")
 
 
 if __name__ == "__main__":
