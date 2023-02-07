@@ -4,8 +4,8 @@ from whitenoise import WhiteNoise
 
 
 app=Flask(__name__)
-app.wsgi_app = WhiteNoise(app.wsgi_app, root='static/', prefix='',
-    index_file="index.html",
+app.wsgi_app = WhiteNoise(app.wsgi_app, root='', prefix='',
+    index_file="index.htm",
     autorefresh = True)
 
 
