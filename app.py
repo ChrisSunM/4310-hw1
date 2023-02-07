@@ -12,7 +12,7 @@ app.wsgi_app = WhiteNoise(app.wsgi_app, root='static/', prefix='static/',
 
 @app.route('/', methods=['GET'])
 def home():
-    return flask.render_template("index.htm")
+    return Flask.render_template("index.htm")
 
 
 if __name__ == "__main__":
