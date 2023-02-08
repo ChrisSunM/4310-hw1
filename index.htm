@@ -35,7 +35,7 @@
     </p>
     <svg id = "info" height="700" width="800"/>
     <h2>For trees planted before 1955</h2>
-    <svg id="infoTwo" height="300" width="300"/>
+    <svg id="infoTwo" height="300" width="600"/>
     <h2>
       Maybe: common tree sizes w/ diameter to see sizes
     </h2>
@@ -224,11 +224,11 @@
             .attr("stroke-width", 6)
             .attr("stroke", "red")
         });
-        let countTwoScale = d3.scaleLinear().domain([0, 27781]).range([280, 20])
+        let countTwoScale = d3.scaleLinear().domain([0, 27781]).range([580, 20])
         arrayTwo.forEach((d,i) => {
           infoTwoGraph.append("line")
             .attr('x1', 20)
-            .attr("x2", 280)
+            .attr("x2", 580)
             .attr("y1", 150)
             .attr("y2", 150)
             .attr("stroke-width", 60)
