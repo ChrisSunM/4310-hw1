@@ -4,18 +4,51 @@
     <script src="https://d3js.org/d3.v7.min.js"></script>
     <script src="https://d3js.org/topojson.v3.min.js"></script>
     <style>
-      #geo {
-        fill: #c8aa76
+      #opaque {
+        fill: #e8e8e8
+      }
+      #startmap {
+        fill: #e8e8e8
+      }
+      #info {
+        fill: #e8e8e8
       }
     </style>
   </head>
   <body>
     <h2>HW 1</h2>
-    <svg id = "geo" height="1000" width="1000"/>
+    <h2>Geolocation of all trees</h2>
+    <svg id="startmap" height = "1000", width = "1000"/>
+    <h2>Trees opacity based on year planted</h2>
+    <p>
+      Trees that had no plant date were planted before 1955 and given
+      an opacity of 0.
+    </p>
+    <svg id = "opaque" height="1000" width="1000"/>
+    <h2>
+      Most common Tree age and how caretaker could effect
+    </h2>
+    <p>
+      These trees are the ones that have become completely transparent
+      from the first to second visual, showing that these are the
+      oldest planted trees that are still around.
+    </p>
+    <svg id = "info" height="700" width="800"/>
+    <h2>For trees planted before 1955</h2>
+    <svg id="infoTwo" height="300" width="300"/>
+    <h2>
+      Maybe: common tree sizes w/ diameter to see sizes
+    </h2>
     <script>
-      let svg = d3.select('#geo');
+      let opaque = d3.select('#opaque');
+      let startMap = d3.select("#startmap");
+      let info = d3.select("#info");
+      let infoTwo = d3.select("#infoTwo")
       const margins = {top: 10, right: 20, bottom: 10, left: 20};
-      const background = svg.append("g").attr("transform", `translate(${margins.left},${margins.top})`);
+      const background = opaque.append("g").attr("transform", `translate(${margins.left},${margins.top})`);
+      const startingMap = startMap.append("g").attr("transform", `translate(${margins.left},${margins.top})`);
+      const infoGraph = info.append("g").attr("transform", `translate(${margins.left},${margins.top})`);
+      const infoTwoGraph = infoTwo.append("g").attr("transform", `translate(${margins.left},${margins.top})`);
       const createGraph = async function() {
         const sfgeo = await d3.json("SF-Neighborhoods.geo.json");
         console.log(sfgeo);
@@ -25,20 +58,193 @@
         background.selectAll("path.maps").data(map.features)
           .attr("class", "maps")
           .join("path")
-          .attr("d", path);
+          .attr("d", path)
+          .attr('stroke', "black")
+          .attr('stroke-opacity', 0.09);
         const points = await d3.csv("Street_Tree_List-2022-01-30_FILTERED.csv");
         console.log(points);
+        const timeParser = d3.timeParse('%m/%d/%y %H:%M');
+        const timeParserNull = d3.timeParse('%m/%d/%Y %H:%M')
+        points.forEach(d => {
+          if(d.PlantDate != "") {
+            d.PlantDate = timeParser(d.PlantDate);
+          } else {
+            d.PlantDate = "1/1/1950 0:00";
+            d.PlantDate = timeParserNull(d.PlantDate);
+          }
+        });
+        console.log(points[2])
+        console.log(points[0])
+        console.log(points[47])
+
         points.forEach(d => {
           d.Position = projection([d.Longitude, d.Latitude]);
         });
+        const formatDate = d3.timeFormat("%Y")
+        console.log(formatDate(points[0].PlantDate))
+        console.log(formatDate(points[2].PlantDate))
+        const dateScale = d3.scaleTime().domain([2022, 1950]).range([1, 0])
         background.selectAll("circle").data(points)
           .join("circle")
           .attr("cx", d => d.Position[0])
           .attr('cy', d=> d.Position[1])
           .attr("r", 1)
           .attr('fill', "#c9243f")
+          .attr("opacity", d => dateScale(formatDate(d["PlantDate"])))
       }
       createGraph();
+      const createGraphTwo = async function(){
+        const sfgeo = await d3.json("SF-Neighborhoods.geo.json");
+        var map = topojson.feature(sfgeo, sfgeo.objects.SFNeighborhoods);
+        var projection = d3.geoMercator().fitSize([960, 980], map);
+        var path = d3.geoPath().projection(projection);
+        startingMap.selectAll("path.maps").data(map.features)
+          .attr("class", "maps")
+          .join("path")
+          .attr("d", path)
+          .attr('stroke', "black")
+          .attr('stroke-opacity', 0.09);
+        const points = await d3.csv("Street_Tree_List-2022-01-30_FILTERED.csv");
+        points.forEach(d => {
+          d.Position = projection([d.Longitude, d.Latitude]);
+        });
+        startingMap.selectAll("circle").data(points)
+          .join("circle")
+          .attr("cx", d => d.Position[0])
+          .attr('cy', d=> d.Position[1])
+          .attr("r", 1)
+          .attr('fill', "#c9243f")
+      }
+      createGraphTwo();
+      const createInfo = async function() {
+        const points = await d3.csv("Street_Tree_List-2022-01-30_FILTERED.csv");
+        points.forEach(d => {
+          d.CommonName = d.qSpecies.split(':: ')[1]
+        });
+        console.log(points[0].CommonName)
+        const timeParser = d3.timeParse('%m/%d/%y %H:%M');
+        const formatDate = d3.timeFormat("%Y")
+        points.forEach(d => {
+          if(d.PlantDate != "") {
+            d.PlantDate = timeParser(d.PlantDate);
+            d.Age = 2022 - formatDate(d.PlantDate)
+          } else {
+            d.Age = "67+"
+          }
+        });
+        console.log(points[2].Age)
+        console.log(points[0].Age)
+        var privateOld = 0
+        var privateYoung = 0
+        var DPWOld = 0
+        var DPWYoung = 0
+        points.forEach(d => {
+          if (d.qCaretaker == "Private") {
+            if (d.Age == "67+") {
+              privateOld += 1
+            } else {
+              privateYoung += 1
+            }
+          } else {
+            if (d.Age == "67+") {
+              DPWOld += 1
+            } else {
+              DPWYoung += 1
+            }
+          }
+          if (d.Age=="67+") {
+            d.Age = 67
+          }
+        });
+        var array = new Array(67).fill(0);
+        var privateArray = new Array(67).fill(0);
+        var arrayTwo = new Array(1).fill(0);
+        var privateArrayTwo = new Array(1).fill(0);
+        //27781 trees planted before 1955, taken out of graph because
+        //makes graph hard to read
+        points.forEach(d => {
+          for (let i =0; i < 67; i++) {
+            if (d.Age == i) {
+              array[i]+=1
+              if(d.qCaretaker == "Private") {
+                privateArray[i] += 1
+              }
+            }
+          }
+        });
+        points.forEach(d => {
+          for (let i = 67; i < 68; i++) {
+            if(d.Age == i) {
+              arrayTwo[0]+=1
+              if(d.qCaretaker =="Private") {
+                privateArrayTwo[0] += 1
+              }
+            }
+          }
+        });
+        console.log(array)
+        console.log(privateArray)
+        console.log(Math.max(privateOld, privateYoung, DPWOld, DPWYoung))
+        //height="700" width="800
+        //margins = {top: 10, right: 20, bottom: 10, left: 20};
+        let ageScale = d3.scaleLinear().domain([0, 67]).range([20, 780])
+        let countScale = d3.scaleLinear().domain([0, 750]).range([690, 10])
+        //y-axis, largest beside from age 67 is 708.
+        let leftAxis = d3.axisLeft(countScale)
+        let leftGridlines = d3.axisLeft(countScale)
+                              .tickSize(-760-20)
+                              .tickFormat("")
+        infoGraph.append("g")
+            .attr('transform', `translate(${margins.left-15},${margins.top-30})`)
+            .call(leftAxis)
+        infoGraph.append("g")
+            .attr('transform', `translate(${margins.left-15},${margins.top-30})`)
+            .call(leftGridlines);
+        let bottomAxis = d3.axisBottom(ageScale)
+        infoGraph.append("g")
+                  .attr("class", "x axis")
+                  .attr('transform', `translate(${margins.left-20},${margins.top+660})`)
+                  .call(bottomAxis);
+        array.forEach((d,i) => {
+          infoGraph.append("line")
+            .attr('x1', ageScale(i))
+            .attr("x2", ageScale(i))
+            .attr("y1", 670)
+            .attr("y2", countScale(d)-20)
+            .attr("stroke-width", 6)
+            .attr("stroke", "blue")
+        });
+        //PrivateYoung
+        privateArray.forEach((d,i) => {
+          infoGraph.append("line")
+            .attr("x1", ageScale(i))
+            .attr("x2",ageScale(i))
+            .attr("y1", 670)
+            .attr("y2", countScale(d)-20)
+            .attr("stroke-width", 6)
+            .attr("stroke", "red")
+        });
+        let countTwoScale = d3.scaleLinear().domain([0, 27781]).range([280, 20])
+        arrayTwo.forEach((d,i) => {
+          infoTwoGraph.append("line")
+            .attr('x1', 20)
+            .attr("x2", 280)
+            .attr("y1", 150)
+            .attr("y2", 150)
+            .attr("stroke-width", 60)
+            .attr("stroke", "blue")
+        });
+        privateArrayTwo.forEach((d,i) => {
+          infoTwoGraph.append("line")
+            .attr("x1", 20)
+            .attr("x2", countTwoScale(i)-20)
+            .attr("y1", 150)
+            .attr("y2", 150)
+            .attr("stroke-width", 60)
+            .attr("stroke", "red")
+        });
+      }
+      createInfo();
     </script>
   </body>
 </html>
