@@ -17,28 +17,61 @@
   </head>
   <body>
     <h2>HW 1</h2>
-    <h2>Geolocation of all trees</h2>
+    <h2>Geolocation of all trees in San Francisco</h2>
+    <h4>Total Tree Count: 37118</h4>
     <svg id="startmap" height = "1000", width = "1000"/>
-    <h2>Trees opacity based on year planted</h2>
+    <h2>Tree map with each tree point's opacity based on year planted</h2>
     <p>
-      Trees that had no plant date were planted before 1955 and given
-      an opacity of 0.
+      Trees that had no plant date (N/A) were planted before 1955 and given
+      an opacity of 0. Trees planted more recently and that are younger
+      have a higher opacity and are darker.
     </p>
+    <h4>Count of trees planted after 1955: 9337</h4>
     <svg id = "opaque" height="1000" width="1000"/>
     <h2>
-      Most common Tree age and how caretaker could effect
+      Count of Trees at each age with caretaker division
     </h2>
     <p>
-      These trees are the ones that have become completely transparent
-      from the first to second visual, showing that these are the
-      oldest planted trees that are still around.
+      These trees are the ones that have not become completely transparent
+      from the first to second visual, which is considered the minority of the
+      data, as the older trees make up a large amount of the data.
+    </p>
+    <p>
+      X-axis: Age (based on year 2022; trees planted on 2022 have an age of 0,
+      trees planted on 2020 have an age of 2)
+    </p>
+    <p>
+      Y-axis: Count of trees
     </p>
     <svg id = "info" height="700" width="800"/>
-    <h2>For trees planted before 1955</h2>
+    <h2>Caretaker division for trees planted before 1955</h2>
+    <p>
+      These trees have an age of 67 or above and are the transparent data points.
+      They have been put in a separate visual because if put on the bar graph with
+      the data before, it would drastically change the scale, making the rest
+      of the data hard to analyze.
+    </p>
     <svg id="infoTwo" height="300" width="600"/>
-    <h2>
-      Maybe: common tree sizes w/ diameter to see sizes
-    </h2>
+    <h3>After-notes</h3>
+    <p>
+      The first two geo-maps are used to show the drastic change of the number of
+      trees planted in the more recent years when compared to the years before 1955,
+      seeing as a large number trees in San Francisco were planted before 1955 and
+      that number has not increased too much in the recent years.
+    </p>
+    <p>
+      In order to see whether there was any pattern between the age of the trees
+      and who the caretaker of the tree was, the caretaker division was made for
+      both bar graphs. In these it's noticeable that the DPW rarely takes care
+      of the majority of trees planted for any age except for one age, which is
+      the age of 14. This is the year of 2008, in which California had
+      many wildfires, San Francisco being one of many victims. This matches with
+      the data, as the DPW found it necessary to plant many more trees to
+      replace the previous ones. In general, though, it's seen that
+      most trees being planted consistently are by private caretakers, with
+      inconsistency from the DPW, showing that private caretakers are taking more
+      care of the environment.
+    </p>
     <script>
       let opaque = d3.select('#opaque');
       let startMap = d3.select("#startmap");
@@ -93,6 +126,7 @@
           .attr("opacity", d => dateScale(formatDate(d["PlantDate"])))
       }
       createGraph();
+
       const createGraphTwo = async function(){
         const sfgeo = await d3.json("SF-Neighborhoods.geo.json");
         var map = topojson.feature(sfgeo, sfgeo.objects.SFNeighborhoods);
@@ -116,12 +150,9 @@
           .attr('fill', "#c9243f")
       }
       createGraphTwo();
+      
       const createInfo = async function() {
         const points = await d3.csv("Street_Tree_List-2022-01-30_FILTERED.csv");
-        points.forEach(d => {
-          d.CommonName = d.qSpecies.split(':: ')[1]
-        });
-        console.log(points[0].CommonName)
         const timeParser = d3.timeParse('%m/%d/%y %H:%M');
         const formatDate = d3.timeFormat("%Y")
         points.forEach(d => {
@@ -160,8 +191,6 @@
         var privateArray = new Array(67).fill(0);
         var arrayTwo = new Array(1).fill(0);
         var privateArrayTwo = new Array(1).fill(0);
-        //27781 trees planted before 1955, taken out of graph because
-        //makes graph hard to read
         points.forEach(d => {
           for (let i =0; i < 67; i++) {
             if (d.Age == i) {
@@ -185,14 +214,11 @@
         console.log(array)
         console.log(privateArray)
         console.log(Math.max(privateOld, privateYoung, DPWOld, DPWYoung))
-        //height="700" width="800
-        //margins = {top: 10, right: 20, bottom: 10, left: 20};
         let ageScale = d3.scaleLinear().domain([0, 67]).range([20, 780])
         let countScale = d3.scaleLinear().domain([0, 750]).range([690, 10])
-        //y-axis, largest beside from age 67 is 708.
         let leftAxis = d3.axisLeft(countScale)
         let leftGridlines = d3.axisLeft(countScale)
-                              .tickSize(-760-20)
+                              .tickSize(-780)
                               .tickFormat("")
         infoGraph.append("g")
             .attr('transform', `translate(${margins.left-15},${margins.top-30})`)
@@ -214,7 +240,6 @@
             .attr("stroke-width", 6)
             .attr("stroke", "blue")
         });
-        //PrivateYoung
         privateArray.forEach((d,i) => {
           infoGraph.append("line")
             .attr("x1", ageScale(i))
@@ -243,6 +268,49 @@
             .attr("stroke-width", 60)
             .attr("stroke", "red")
         });
+        infoGraph.append("text")
+          .attr("x", 650)
+          .attr("y", 100)
+          .text("Private caretaker")
+          .style("fill", "red")
+        infoGraph.append("circle")
+          .attr("cx", 640)
+          .attr('cy', 95)
+          .attr("r", 5)
+          .attr("fill", "red")
+        infoGraph.append("text")
+          .attr("x", 650)
+          .attr("y", 120)
+          .text("DPW caretaker")
+          .style("fill", "blue")
+        infoGraph.append("circle")
+          .attr("cx", 640)
+          .attr('cy', 115)
+          .attr("r", 5)
+          .attr("fill", "blue")
+
+        infoTwoGraph.append("text")
+          .attr("x", 230)
+          .attr("y", 50)
+          .text("Private caretaker trees: 23556")
+          .style("fill", "red")
+        infoTwoGraph.append("circle")
+          .attr("cx", 220)
+          .attr('cy', 45)
+          .attr("r", 5)
+          .attr("fill", "red")
+        infoTwoGraph.append("text")
+          .attr("x", 230)
+          .attr("y", 70)
+          .text("DPW caretaker trees: 4225")
+          .style("fill", "blue")
+        infoTwoGraph.append("circle")
+          .attr("cx", 220)
+          .attr('cy', 65)
+          .attr("r", 5)
+          .attr("fill", "blue")
+        console.log(privateOld)
+        console.log(DPWOld)
       }
       createInfo();
     </script>
